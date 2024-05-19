@@ -7,13 +7,15 @@ export default function MeetingsPage({username}) {
     const [addingNewMeeting, setAddingNewMeeting] = useState(false);
 
     async function handleNewMeeting(meeting) {
+
         const response = await fetch('/api/meetings', {
             method: 'POST',
             body: JSON.stringify(meeting),
-            headers: { 'Content-Type': 'application/json' }
+            headers: {'Content-Type': 'application/json'}
         });
         if (response.ok) {
-            const nextMeetings = [...meetings, meeting];
+            const updatedMeeting = await response.json();
+            const nextMeetings = [...meetings, updatedMeeting];
             setMeetings(nextMeetings);
             setAddingNewMeeting(false);
         }
@@ -29,17 +31,26 @@ export default function MeetingsPage({username}) {
         }
     }
 
-    function handleSignIn(meeting) {
-        const nextMeetings = meetings.map(m => {
-            if (m === meeting) {
-                m.participants = [...m.participants, username];
-            }
-            return m;
+    async function handleSignIn(meeting) {
+
+        const response = await fetch(`/api/meetings/${meeting.id}/participants`, {
+            method: 'POST',
+            body: JSON.stringify({"login": username}),
+            headers: {'Content-Type': 'application/json'}
         });
-        setMeetings(nextMeetings);
+        if (response.ok) {
+            const nextMeetings = meetings.map(m => {
+                if (m === meeting) {
+                    m.participants = [...m.participants, username];
+                }
+                return m;
+            });
+            setMeetings(nextMeetings);
+        }
     }
 
     function handleSignOut(meeting) {
+
         const nextMeetings = meetings.map(m => {
             if (m === meeting) {
                 m.participants = m.participants.filter(u => u !== username);
